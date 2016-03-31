@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/test/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Mario"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NHBCommon"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NHBCommonDB"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NHBCommonEncrypt"/>
+	<classpathentry kind="lib" path="lib/annotations-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/guava-18.0.jar"/>
+	<classpathentry kind="lib" path="lib/javassist-3.18.2-GA.jar"/>
+	<classpathentry kind="lib" path="lib/reflections-0.9.10.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

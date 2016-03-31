@@ -1,0 +1,14 @@
+<ivy-module version="2.0">
+	<info organisation="org.apache" module="amun-id" />
+
+	<configurations defaultconfmapping="default">
+		<conf name="default" />
+		<conf name="java7" extends="default" description="Java 7 dependencies" />
+		<conf name="eclipse" description="Special dependencies in Eclipse" />
+		<conf name="utest" extends="eclipse" description="Unit testing dependencies" />
+	</configurations>
+
+	<dependencies>
+		<dependency org="org.reflections" name="reflections" rev="0.9.10" />
+	</dependencies>
+</ivy-module>

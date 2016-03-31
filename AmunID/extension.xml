@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mario>
+	<name>AmunID</name>
+
+	<datasources>
+		<mongodb>
+			<name>id_mongodb</name>
+			<endpoint>
+				<entry>127.0.0.1:27017</entry>
+			</endpoint>
+			<credentials>
+				<entry>
+					<username>thanh</username>
+					<password>123456</password>
+					<authdb>admin</authdb>
+				</entry>
+			</credentials>
+		</mongodb>
+
+	</datasources>
+
+	<servers>
+		<http>
+			<name>id_http_server</name>
+			<port>9301</port>
+			<options>no_sessions</options>
+		</http>
+	</servers>
+
+	<producers>
+
+	</producers>
+
+	<gateways>
+		<http>
+			<name>id_http_gateway</name>
+			<server>id_http_server</server>
+			<path>/id</path>
+			<encoding>utf-8</encoding>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Id Worker #%d</threadnamepattern>
+			</workerpool>
+		</http>
+	</gateways>
+
+	<lifecycles>
+		<handler>
+			<name>userHandler</name>
+			<handle>com.amun.id.UserHandler</handle>
+			<bind>
+				<gateway>id_http_gateway</gateway>
+			</bind>
+			<variables>
+				<variable name="mongodb" type="string">id_mongodb</variable>
+				<variable name="privateKey" type="string">resources/private.key</variable>
+			</variables>
+		</handler>
+	</lifecycles>
+
+	<monitor>
+
+	</monitor>
+</mario>
