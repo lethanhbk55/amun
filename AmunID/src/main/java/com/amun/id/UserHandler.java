@@ -96,6 +96,12 @@ public class UserHandler extends BaseMessageHandler {
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
 				new ArrayList<>(Arrays.asList(new Document().append(F.USERNAME, 1))));
+		
+		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
+				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))));
+		
+		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
+				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))));
 	}
 
 	@Override

@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.RandomStringUtils;
 
 public class StringUtils {
-	public static final String SALT_SAMPLE = "}|:'\"vwxyzABCDabcNOu345enopkl90~!@#$%mWXYZ6*()d12<>?IJKLM_+G78^&PQRSqrstH{EFTUVfghij";
+	public static final String SALT_SAMPLE = "}|:'vwxyzABCDabcNOu345enopkl90~!@#$%mWXYZ6*()d12<>?IJKLM_+G78^&PQRSqrstH{EFTUVfghij";
 	public static final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
 	public static boolean isValidPhone(String phone) {

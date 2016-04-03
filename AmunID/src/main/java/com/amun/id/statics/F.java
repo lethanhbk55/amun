@@ -23,4 +23,11 @@ public class F {
 	public static final String MONGODB = "mongodb";
 	public static final String KEY = "key";
 	public static final String UNIQUE = "unique";
+	public static final String PARTNER_NAME = "partnerName";
+	public static final String PUBLIC_KEY = "publicKey";
+	public static final String AUTHENTICATOR = "authenticator";
+	public static final String AUTHENTICATOR_ID = "authenticatorId";
+	public static final String NEW_PASSWORD = "newPassword";
+	public static final String _ID = "_id";
+	public static final String LAST_MODIFY = "lastModify";
 }

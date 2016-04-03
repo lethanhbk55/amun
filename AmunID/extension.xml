@@ -44,6 +44,34 @@
 				<threadnamepattern>Id Worker #%d</threadnamepattern>
 			</workerpool>
 		</http>
+
+		<http>
+			<name>id_http_gateway_2</name>
+			<server>id_http_server</server>
+			<path>/id/post</path>
+			<encoding>utf-8</encoding>
+			<deserializer>com.mario.entity.message.transcoder.http.HttpMultipartDeserializer</deserializer>
+			<usemultipath>true</usemultipath>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Id Worker #%d</threadnamepattern>
+			</workerpool>
+		</http>
+		<http>
+			<name>id_http_gateway_res</name>
+			<server>id_http_server</server>
+			<path>/id/res</path>
+			<encoding>utf-8</encoding>
+			<deserializer>com.mario.entity.message.transcoder.http.JsonBodyHttpMessageDeserializer</deserializer>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Id Worker #%d</threadnamepattern>
+			</workerpool>
+		</http>
 	</gateways>
 
 	<lifecycles>
@@ -52,6 +80,8 @@
 			<handle>com.amun.id.UserHandler</handle>
 			<bind>
 				<gateway>id_http_gateway</gateway>
+				<gateway>id_http_gateway_2</gateway>
+				<gateway>id_http_gateway_res</gateway>
 			</bind>
 			<variables>
 				<variable name="mongodb" type="string">id_mongodb</variable>
