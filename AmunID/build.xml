@@ -9,7 +9,6 @@
 	<property name="lib" value="lib" />
 	<property name="resources" value="resources" />
 
-
 	<property name="jar.name" value="${ant.project.name}.build.${build.number}.jar" />
 
 	<!-- clean cache for ivy -->

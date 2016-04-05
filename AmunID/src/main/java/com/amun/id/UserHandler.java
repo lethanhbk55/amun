@@ -12,9 +12,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bson.Document;
 
-import com.amun.id.annotation.ProcessorManager;
 import com.amun.id.exception.CommandNotFoundException;
 import com.amun.id.exception.ExecuteProcessorException;
+import com.amun.id.processor.ProcessorManager;
 import com.amun.id.statics.F;
 import com.mario.entity.impl.BaseMessageHandler;
 import com.mario.entity.message.Message;
@@ -96,10 +96,10 @@ public class UserHandler extends BaseMessageHandler {
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
 				new ArrayList<>(Arrays.asList(new Document().append(F.USERNAME, 1))));
-		
+
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))));
-		
+
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))));
 	}
@@ -114,13 +114,16 @@ public class UserHandler extends BaseMessageHandler {
 			if (message instanceof HttpMessage) {
 				HttpMessage httpMessage = (HttpMessage) message;
 				HttpServletRequest servletRequest = (HttpServletRequest) httpMessage.getRequest();
+				if (servletRequest == null) {
+					servletRequest = (HttpServletRequest) httpMessage.getContext().getRequest();
+				}
+
 				String ipAddress = null;
 				if (servletRequest != null) {
 					ipAddress = servletRequest.getHeader("X-Forwarded-For");
-				}
-
-				if (ipAddress == null) {
-					ipAddress = httpMessage.getContext().getRequest().getRemoteAddr();
+					if (ipAddress == null) {
+						ipAddress = httpMessage.getContext().getRequest().getRemoteAddr();
+					}
 				}
 
 				request.setString(F.IP_ADDRESS, ipAddress);

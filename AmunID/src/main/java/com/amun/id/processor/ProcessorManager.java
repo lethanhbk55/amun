@@ -1,13 +1,13 @@
-package com.amun.id.annotation;
+package com.amun.id.processor;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.amun.id.UserHandler;
+import com.amun.id.annotation.AnnotationLoader;
 import com.amun.id.exception.CommandNotFoundException;
 import com.amun.id.exception.ExecuteProcessorException;
-import com.amun.id.processor.AbstractProcessor;
 import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObjectRO;
 
