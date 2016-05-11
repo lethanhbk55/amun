@@ -1,10 +1,6 @@
 package com.amun.id.processor.user;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +8,7 @@ import org.bson.Document;
 
 import com.amun.id.annotation.CommandProcessor;
 import com.amun.id.exception.ExecuteProcessorException;
+import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.amun.id.utils.StringUtils;
@@ -81,14 +78,14 @@ public class RegisterProcessor extends AbstractProcessor {
 					info.setString(F.USERNAME, username);
 					info.setLong(F.TIMESTAMP, System.currentTimeMillis());
 
+					String signature = null;
 					try {
-						String signature = Base64.getEncoder()
-								.encodeToString(getContext().getSignatureHelper().sign(info.toJSON()));
-						return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.MESSAGE, "register successful", F.INFO,
-								info, F.SIGNATURE, signature));
-					} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
+						signature = getContext().signData(info.toJSON());
+					} catch (SignDataException e) {
 						throw new ExecuteProcessorException(e);
 					}
+					return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.MESSAGE, "register successful", F.INFO,
+							info, F.SIGNATURE, signature));
 				}
 
 				status = 0;

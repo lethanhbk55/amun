@@ -1,8 +1,5 @@
 package com.amun.id;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +11,7 @@ import org.bson.Document;
 
 import com.amun.id.exception.CommandNotFoundException;
 import com.amun.id.exception.ExecuteProcessorException;
+import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.ProcessorManager;
 import com.amun.id.statics.F;
 import com.mario.entity.impl.BaseMessageHandler;
@@ -27,32 +25,16 @@ import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObject;
 import com.nhb.common.data.PuObjectRO;
 import com.nhb.common.data.PuValue;
-import com.nhb.common.encrypt.rsa.KeyPairHelper;
-import com.nhb.common.encrypt.rsa.SignatureHelper;
-import com.nhb.common.utils.FileSystemUtils;
 
 public class UserHandler extends BaseMessageHandler {
 	private ProcessorManager manager;
 	private MongoDatabase database;
-	private SignatureHelper signatureHelper;
 
 	@Override
 	public void init(PuObjectRO initParams) {
 		if (initParams.variableExists(F.MONGODB)) {
 			initMongoDatabase(getApi().getMongoClient(initParams.getString(F.MONGODB)).getDatabase("amun_id"));
 		}
-		String privateKeyPath = initParams.getString(F.PRIVATE_KEY);
-
-		KeyPairHelper keyPairHelper = new KeyPairHelper();
-		try {
-			keyPairHelper.loadPrivateKey(new File(
-					FileSystemUtils.createPathFrom(FileSystemUtils.getBasePathForClass(getClass()), privateKeyPath)));
-		} catch (IOException | GeneralSecurityException e1) {
-			throw new RuntimeException("load private key error", e1);
-		}
-
-		signatureHelper = new SignatureHelper();
-		signatureHelper.setKeyPairHelper(keyPairHelper);
 
 		manager = new ProcessorManager();
 		try {
@@ -149,7 +131,18 @@ public class UserHandler extends BaseMessageHandler {
 		return this.database;
 	}
 
-	public SignatureHelper getSignatureHelper() {
-		return this.signatureHelper;
+	public String signData(String data) throws SignDataException {
+		PuObject request = new PuObject();
+		request.setString(F.COMMAND, "signData");
+		request.setString(F.DATA, data);
+		PuElement resp = getApi().call(F.SINGATURE_PLUGIN_NAME, request);
+		if (resp != null && resp instanceof PuObject) {
+			PuObject result = (PuObject) resp;
+			if (result.variableExists(F.STATUS) && result.getInteger(F.STATUS) == 0) {
+				return result.getString(F.SIGNATURE);
+			}
+			throw new SignDataException("result not contains status filed or status != 0\n" + result);
+		}
+		throw new SignDataException("call signature plugin return null or not instance PuObject\n" + resp);
 	}
 }

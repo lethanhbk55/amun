@@ -30,4 +30,7 @@ public class F {
 	public static final String NEW_PASSWORD = "newPassword";
 	public static final String _ID = "_id";
 	public static final String LAST_MODIFY = "lastModify";
+	public static final String DATA = "data";
+	public static final String IS_VALID = "isValid";
+	public static final String SINGATURE_PLUGIN_NAME = "signaturePlugin";
 }

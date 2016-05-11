@@ -1,14 +1,10 @@
 package com.amun.id.processor.user;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.util.Base64;
-
 import org.bson.Document;
 
 import com.amun.id.annotation.CommandProcessor;
 import com.amun.id.exception.ExecuteProcessorException;
+import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.mongodb.client.FindIterable;
@@ -48,15 +44,14 @@ public class LoginProcessor extends AbstractProcessor {
 					info.setString(F.USER_ID, userDocument.getString(F.USER_ID));
 					info.setLong(F.TIMESTAMP, System.currentTimeMillis());
 
-					String signature;
+					String signature = null;
 					try {
-						signature = Base64.getEncoder()
-								.encodeToString(getContext().getSignatureHelper().sign(info.toJSON()));
-						return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.INFO, info, F.SIGNATURE, signature,
-								F.MESSAGE, "login successful"));
-					} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+						signature = getContext().signData(info.toJSON());
+					} catch (SignDataException e) {
 						throw new ExecuteProcessorException(e);
 					}
+					return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.INFO, info, F.SIGNATURE, signature,
+							F.MESSAGE, "login successful"));
 				} else {
 					status = 100;
 					message = "wrong password";
