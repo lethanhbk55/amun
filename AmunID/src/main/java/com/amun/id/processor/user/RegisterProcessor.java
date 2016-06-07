@@ -44,6 +44,11 @@ public class RegisterProcessor extends AbstractProcessor {
 			String ipAddress = request.getString(F.IP_ADDRESS);
 			String displayName = request.getString(F.DISPLAY_NAME, username);
 
+			if (username.length() < 6 || username.length() > 15 || displayName.length() < 3
+					|| displayName.length() > 15) {
+				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.NAME_INVALID.getCode()));
+			}
+
 			MongoCollection<Document> illegalCollection = getContext().getDatabase().getCollection(F.BAD_WORD);
 			FindIterable<Document> found = illegalCollection.find();
 
@@ -60,11 +65,6 @@ public class RegisterProcessor extends AbstractProcessor {
 
 			if (!StringUtils.containsLetterAndDigit(password) || password.length() < 5 || password.length() > 15) {
 				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.PASSWORD_INVALID.getCode()));
-			}
-
-			if (username.length() < 6 || username.length() > 15 || displayName.length() < 3
-					|| displayName.length() > 15) {
-				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.NAME_INVALID.getCode()));
 			}
 
 			if (!StringUtils.isValidIPAdress(ipAddress) && !allowIPs.contains(ipAddress)) {
