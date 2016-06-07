@@ -17,6 +17,12 @@
 			</credentials>
 		</mongodb>
 
+		<hazelcast>
+			<name>id_hazelcast</name>
+			<lazyinit>true</lazyinit>
+			<config>conf/hazelcast.xml</config>
+			<member>true</member>
+		</hazelcast>
 	</datasources>
 
 	<servers>
@@ -92,6 +98,7 @@
 			</bind>
 			<variables>
 				<variable name="mongodb" type="string">id_mongodb</variable>
+				<variable name="hazelcast" type="string">id_hazelcast</variable>
 			</variables>
 		</handler>
 

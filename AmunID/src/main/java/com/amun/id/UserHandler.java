@@ -9,11 +9,14 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bson.Document;
 
+import com.amun.id.accesstoken.AccessTokenManager;
 import com.amun.id.exception.CommandNotFoundException;
 import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.ProcessorManager;
 import com.amun.id.statics.F;
+import com.amun.id.user.IdHazelcastInitializer;
+import com.hazelcast.core.HazelcastInstance;
 import com.mario.entity.impl.BaseMessageHandler;
 import com.mario.entity.message.Message;
 import com.mario.entity.message.impl.HttpMessage;
@@ -29,6 +32,8 @@ import com.nhb.common.data.PuValue;
 public class UserHandler extends BaseMessageHandler {
 	private ProcessorManager manager;
 	private MongoDatabase database;
+	private HazelcastInstance hazelcast;
+	private AccessTokenManager accessTokenManager;
 
 	@Override
 	public void init(PuObjectRO initParams) {
@@ -42,6 +47,11 @@ public class UserHandler extends BaseMessageHandler {
 		} catch (Exception e) {
 			getLogger().error("error while init procesors", e);
 		}
+
+		this.hazelcast = getApi().getHazelcastInstance(initParams.getString(F.HAZELCAST),
+				new IdHazelcastInitializer(getDatabase(), 30, 1000));
+		this.accessTokenManager = new AccessTokenManager(hazelcast);
+		this.accessTokenManager.start(getApi().getScheduler());
 	}
 
 	private void createDatabaseIndexes(MongoCollection<Document> collection, List<Document> tobeIndexed) {
@@ -79,11 +89,18 @@ public class UserHandler extends BaseMessageHandler {
 		createDatabaseIndexes(this.database.getCollection(F.USER),
 				new ArrayList<>(Arrays.asList(new Document().append(F.USERNAME, 1))));
 
+		createDatabaseIndexes(this.database.getCollection(F.USER),
+				new ArrayList<>(Arrays.asList(new Document().append(F.REFRESH_TOKEN, 1))));
+
+		createDatabaseIndexes(this.database.getCollection(F.USER),
+				new ArrayList<>(Arrays.asList(new Document().append(F.DISPLAY_NAME, 1))));
+
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))));
 
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))));
+
 	}
 
 	@Override
@@ -129,6 +146,14 @@ public class UserHandler extends BaseMessageHandler {
 
 	public MongoDatabase getDatabase() {
 		return this.database;
+	}
+
+	public HazelcastInstance getHazelcast() {
+		return this.hazelcast;
+	}
+
+	public AccessTokenManager getAccessTokenManager() {
+		return this.accessTokenManager;
 	}
 
 	public String signData(String data) throws SignDataException {

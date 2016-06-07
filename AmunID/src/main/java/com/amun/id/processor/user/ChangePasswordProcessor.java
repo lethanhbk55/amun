@@ -97,7 +97,7 @@ public class ChangePasswordProcessor extends AbstractProcessor {
 		} else {
 			message = "paramter're missing";
 		}
-		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.MESSAGE, message));
+		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
 	}
 
 }

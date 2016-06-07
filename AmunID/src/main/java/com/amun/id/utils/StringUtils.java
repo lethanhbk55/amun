@@ -37,4 +37,10 @@ public class StringUtils {
 	public static String randomString(int length) {
 		return RandomStringUtils.random(length, SALT_SAMPLE);
 	}
+
+	public static boolean containsLetterAndDigit(String text) {
+		boolean hasDigit = text.matches(".*\\d+.*");
+		boolean hasLetter = text.matches(".*\\[a-zA-Z]+.*");
+		return hasDigit && hasLetter;
+	}
 }

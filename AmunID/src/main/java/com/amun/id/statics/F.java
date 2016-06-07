@@ -10,7 +10,6 @@ public class F {
 	public static final String SALT = "salt";
 	public static final String PHONE = "phone";
 	public static final String FACEBOOK_ID = "facebookId";
-	public static final String MESSAGE = "message";
 	public static final String USER = "user";
 	public static final String PRIVATE_KEY = "privateKey";
 	public static final String USER_ID = "userId";
@@ -33,4 +32,17 @@ public class F {
 	public static final String DATA = "data";
 	public static final String IS_VALID = "isValid";
 	public static final String SINGATURE_PLUGIN_NAME = "signaturePlugin";
+	public static final String REFRESH_TOKEN = "refreshToken";
+	public static final String REFRESH_TOKEN_EXPIRE_IN = "refreshTokenExpireIn";
+	public static final String HAZELCAST = "hazelcast";
+	public static final String ACCESS_TOKEN = "accessToken";
+	public static final String LAST_TOUCH = "lastTouch";
+	public static final String EXPIRE_IN = "expireIn";
+	public static final String DISPLAY_NAME = "displayName";
+	public static final String PHONE_VERIFIED = "phoneVerified";
+	public static final String ILLEGAL_NAME = "illegalName";
+	public static final String BAD_WORD = "badWord";
+	public static final String WORD = "word";
+	public static final String AVATAR = "avatar";
+	public static final String GENDER = "gender";
 }

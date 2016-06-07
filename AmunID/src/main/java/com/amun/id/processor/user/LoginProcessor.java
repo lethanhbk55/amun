@@ -2,11 +2,14 @@ package com.amun.id.processor.user;
 
 import org.bson.Document;
 
+import com.amun.id.accesstoken.AccessTokenInfo;
+import com.amun.id.accesstoken.AccessTokenManager;
 import com.amun.id.annotation.CommandProcessor;
 import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
+import com.amun.id.statics.Status;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -35,13 +38,15 @@ public class LoginProcessor extends AbstractProcessor {
 			FindIterable<Document> found = collection.find(document);
 			Document userDocument = found.first();
 			if (userDocument != null) {
+				String userId = userDocument.getString(F.USER_ID);
+				String refreshToken = userDocument.getString(F.REFRESH_TOKEN);
 				String salt = userDocument.getString(F.SALT);
 				String hash = SHAEncryptor.sha512Hex(password + salt);
 
 				if (hash.equals(userDocument.getString(F.PASSWORD))) {
 					PuObject info = new PuObject();
-					info.setString(F.USERNAME, userDocument.getString(F.USERNAME));
-					info.setString(F.USER_ID, userDocument.getString(F.USER_ID));
+					info.setString(F.USERNAME, username);
+					info.setString(F.USER_ID, userId);
 					info.setLong(F.TIMESTAMP, System.currentTimeMillis());
 
 					String signature = null;
@@ -50,8 +55,19 @@ public class LoginProcessor extends AbstractProcessor {
 					} catch (SignDataException e) {
 						throw new ExecuteProcessorException(e);
 					}
-					return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.INFO, info, F.SIGNATURE, signature,
-							F.MESSAGE, "login successful"));
+					AccessTokenInfo token = new AccessTokenInfo(userId, username);
+					getContext().getAccessTokenManager().removeByUsername(username);
+					getContext().getAccessTokenManager().addAccessToken(token);
+					PuObject data = new PuObject();
+					data.setString(F.ACCESS_TOKEN, token.getAccessToken());
+					data.setString(F.REFRESH_TOKEN, refreshToken);
+					data.setLong(F.EXPIRE_IN, token.getLastTouch() + AccessTokenManager.ACCESS_TOKEN_LIVE_TIME);
+					data.setPuObject(F.INFO, info);
+					data.setString(F.SIGNATURE, signature);
+					PuObject result = new PuObject();
+					result.setInteger(F.STATUS, Status.SUCCESS.getCode());
+					result.setPuObject(F.DATA, data);
+					return result;
 				} else {
 					status = 100;
 					message = "wrong password";
@@ -65,7 +81,7 @@ public class LoginProcessor extends AbstractProcessor {
 					new UnsupportedOperationException("login by facebook hasn't supported yet"));
 		}
 
-		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.MESSAGE, message));
+		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
 	}
 
 }

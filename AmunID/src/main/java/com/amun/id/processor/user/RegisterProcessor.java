@@ -1,17 +1,25 @@
 package com.amun.id.processor.user;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.UUID;
 
 import org.bson.Document;
 
+import com.amun.id.accesstoken.AccessTokenInfo;
+import com.amun.id.accesstoken.AccessTokenManager;
 import com.amun.id.annotation.CommandProcessor;
 import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
+import com.amun.id.statics.Status;
 import com.amun.id.utils.StringUtils;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
 import com.nhb.common.data.MapTuple;
 import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObject;
@@ -28,18 +36,33 @@ public class RegisterProcessor extends AbstractProcessor {
 		String message = "paramter's missing";
 		boolean alsoLogin = request.getBoolean(F.ALSO_LOGIN, false);
 
-		if (request.variableExists(F.USERNAME) && request.variableExists(F.PASSWORD) && request.variableExists(F.PHONE)
+		if (request.variableExists(F.USERNAME) && request.variableExists(F.PASSWORD)
 				&& request.variableExists(F.IP_ADDRESS)) {
 			String username = request.getString(F.USERNAME);
 			String password = request.getString(F.PASSWORD);
-			String phone = request.getString(F.PHONE);
 			String ipAddress = request.getString(F.IP_ADDRESS);
+			String displayName = request.getString(F.DISPLAY_NAME, username);
 
-			if (!StringUtils.isValidPhone(phone)) {
-				status = 200;
-				message = "phone number is invalid";
-			} else if (!StringUtils.isValidIPAdress(ipAddress) && !allowIPs.contains(ipAddress)) {
-				status = 201;
+			MongoCollection<Document> illegalCollection = getContext().getDatabase().getCollection(F.BAD_WORD);
+			FindIterable<Document> found = illegalCollection.find();
+
+			List<String> words = new ArrayList<>();
+			for (Document document : found) {
+				words.add(document.getString(F.WORD));
+			}
+
+			for (String word : words) {
+				if (username.contains(word) || displayName.contains(word)) {
+					return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.BAD_WORD_FILTER));
+				}
+			}
+
+			if (!StringUtils.containsLetterAndDigit(password) || password.length() < 5 || password.length() > 15) {
+				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.PASSWORD_INVALID.getCode()));
+			}
+
+			if (!StringUtils.isValidIPAdress(ipAddress) && !allowIPs.contains(ipAddress)) {
+				status = Status.INVALID_IP_ADDRESS.getCode();
 				message = "ip address `" + ipAddress + "` is invalid";
 			} else {
 				Document user = new Document();
@@ -47,9 +70,22 @@ public class RegisterProcessor extends AbstractProcessor {
 				try {
 					long count = getContext().getDatabase().getCollection(F.USER).count(user);
 					if (count > 0) {
-						status = 202;
+						status = Status.USERNAME_EXISTS.getCode();
 						message = "user `" + username + "` was already exists";
-						return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.MESSAGE, message));
+						return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
+					}
+				} catch (Exception e) {
+					throw new ExecuteProcessorException(e);
+				}
+
+				user = new Document();
+				user.put(F.DISPLAY_NAME, displayName);
+				try {
+					long count = getContext().getDatabase().getCollection(F.USER).count(user);
+					if (count > 0) {
+						status = Status.DISPLAY_NAME_EXISTS.getCode();
+						message = "displayName `" + displayName + "` was already exists";
+						return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
 					}
 				} catch (Exception e) {
 					throw new ExecuteProcessorException(e);
@@ -61,10 +97,20 @@ public class RegisterProcessor extends AbstractProcessor {
 				Document document = new Document();
 				document.put(F.USER_ID, userId);
 				document.put(F.USERNAME, username);
+				document.put(F.DISPLAY_NAME, displayName);
 				document.put(F.SALT, salt);
 				document.put(F.PASSWORD, SHAEncryptor.sha512Hex(password + salt));
 				document.put(F.CREATED_TIME, System.currentTimeMillis());
 				document.put(F.IP_ADDRESS, request.getString(F.IP_ADDRESS));
+				String refreshToken = UUID.randomUUID().toString() + "." + UUID.randomUUID().toString();
+				refreshToken = refreshToken.replace("-", "");
+				document.put(F.REFRESH_TOKEN, refreshToken);
+				document.put(F.PHONE_VERIFIED, false);
+
+				Calendar calendar = GregorianCalendar.getInstance();
+				calendar.add(Calendar.DATE, 90);
+				long refreshTokenExpireIn = calendar.getTimeInMillis();
+				document.put(F.REFRESH_TOKEN_EXPIRE_IN, refreshTokenExpireIn);
 
 				try {
 					getContext().getDatabase().getCollection(F.USER).insertOne(document);
@@ -84,8 +130,23 @@ public class RegisterProcessor extends AbstractProcessor {
 					} catch (SignDataException e) {
 						throw new ExecuteProcessorException(e);
 					}
-					return PuObject.fromObject(new MapTuple<>(F.STATUS, 0, F.MESSAGE, "register successful", F.INFO,
-							info, F.SIGNATURE, signature));
+
+					AccessTokenInfo token = new AccessTokenInfo(userId, username);
+
+					getContext().getAccessTokenManager().removeByUsername(username);
+					getContext().getAccessTokenManager().addAccessToken(token);
+
+					PuObject result = new PuObject();
+					result.setInteger(F.STATUS, Status.SUCCESS.getCode());
+
+					PuObject data = new PuObject();
+					data.setString(F.ACCESS_TOKEN, token.getAccessToken());
+					data.setString(F.REFRESH_TOKEN, refreshToken);
+					data.setString(F.EXPIRE_IN, token.getAccessToken() + AccessTokenManager.ACCESS_TOKEN_LIVE_TIME);
+					data.setPuObject(F.INFO, info);
+					data.setString(F.SIGNATURE, signature);
+					result.setPuObject(F.DATA, data);
+					return result;
 				}
 
 				status = 0;
@@ -93,7 +154,7 @@ public class RegisterProcessor extends AbstractProcessor {
 			}
 		}
 
-		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.MESSAGE, message));
+		return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
 	}
 
 }

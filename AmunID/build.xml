@@ -1,4 +1,4 @@
-<project name="AmunID" default="build" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="AmunID" default="deploy" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<property name="dist" value="dist" />
 	<property name="dist.ext" value="${dist}/ext" />
 	<property name="dist.jar" value="${dist}/jar" />
@@ -7,6 +7,8 @@
 	<property file="build.properties" />
 	<buildnumber file="build.number" />
 	<property name="lib" value="lib" />
+	<property name="conf" value="conf"/>
+
 	<property name="resources" value="resources" />
 
 	<property name="jar.name" value="${ant.project.name}.build.${build.number}.jar" />

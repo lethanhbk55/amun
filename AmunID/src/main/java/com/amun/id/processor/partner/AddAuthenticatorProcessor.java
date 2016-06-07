@@ -28,7 +28,7 @@ public class AddAuthenticatorProcessor extends AbstractProcessor {
 			MongoCollection<Document> collection = getContext().getDatabase().getCollection(F.AUTHENTICATOR);
 			long count = collection.count(new BasicDBObject(F.PARTNER_NAME, partnerName));
 			if (count > 0) {
-				return PuObject.fromObject(new MapTuple<>(F.STATUS, 300, F.MESSAGE, "partner name already exists"));
+				return PuObject.fromObject(new MapTuple<>(F.STATUS, 300, F.DATA, "partner name already exists"));
 			}
 
 			String authenticatorId = UUID.randomUUID().toString();
@@ -42,7 +42,7 @@ public class AddAuthenticatorProcessor extends AbstractProcessor {
 			collection.insertOne(document);
 
 			return PuObject.fromObject(
-					new MapTuple<>(F.STATUS, 0, F.MESSAGE, "register succesful", F.AUTHENTICATOR_ID, authenticatorId));
+					new MapTuple<>(F.STATUS, 0, F.DATA, "register succesful", F.AUTHENTICATOR_ID, authenticatorId));
 		}
 		return new PuValue("paramter're missing");
 	}
