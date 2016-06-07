@@ -39,8 +39,11 @@ public class StringUtils {
 	}
 
 	public static boolean containsLetterAndDigit(String text) {
-		boolean hasDigit = text.matches(".*\\d+.*");
-		boolean hasLetter = text.matches(".*\\[a-zA-Z]+.*");
-		return hasDigit && hasLetter;
+		for (char c : text.toCharArray()) {
+			if (!Character.isLetterOrDigit(c)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

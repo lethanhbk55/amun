@@ -1,7 +1,5 @@
 package com.amun.id.processor.user;
 
-import org.bson.Document;
-
 import com.amun.id.accesstoken.AccessTokenInfo;
 import com.amun.id.accesstoken.AccessTokenManager;
 import com.amun.id.annotation.CommandProcessor;
@@ -10,9 +8,8 @@ import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.amun.id.statics.Status;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.amun.id.user.IDUser;
+import com.hazelcast.core.IMap;
 import com.nhb.common.data.MapTuple;
 import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObject;
@@ -24,7 +21,6 @@ public class LoginProcessor extends AbstractProcessor {
 
 	@Override
 	public PuElement execute(PuObjectRO request) throws ExecuteProcessorException {
-		MongoDatabase database = getContext().getDatabase();
 		int status = 1;
 		String message = "paramter're missing";
 
@@ -32,18 +28,16 @@ public class LoginProcessor extends AbstractProcessor {
 			String username = request.getString(F.USERNAME);
 			String password = request.getString(F.PASSWORD);
 
-			MongoCollection<Document> collection = database.getCollection(F.USER);
-			Document document = new Document();
-			document.put(F.USERNAME, username);
-			FindIterable<Document> found = collection.find(document);
-			Document userDocument = found.first();
-			if (userDocument != null) {
-				String userId = userDocument.getString(F.USER_ID);
-				String refreshToken = userDocument.getString(F.REFRESH_TOKEN);
-				String salt = userDocument.getString(F.SALT);
+			IMap<String, IDUser> map = getContext().getHazelcast()
+					.getMap(IDUser.ID_USER_MAP_KEY);
+			IDUser user = map.get(username);
+			if (user != null) {
+				String userId = user.getUserId();
+				String refreshToken = user.getRefreshToken();
+				String salt = user.getSalt();
 				String hash = SHAEncryptor.sha512Hex(password + salt);
 
-				if (hash.equals(userDocument.getString(F.PASSWORD))) {
+				if (hash.equals(user.getPassword())) {
 					PuObject info = new PuObject();
 					info.setString(F.USERNAME, username);
 					info.setString(F.USER_ID, userId);

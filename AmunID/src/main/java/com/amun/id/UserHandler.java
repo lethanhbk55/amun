@@ -15,6 +15,7 @@ import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.ProcessorManager;
 import com.amun.id.statics.F;
+import com.amun.id.user.IDUser;
 import com.amun.id.user.IdHazelcastInitializer;
 import com.hazelcast.core.HazelcastInstance;
 import com.mario.entity.impl.BaseMessageHandler;
@@ -49,7 +50,8 @@ public class UserHandler extends BaseMessageHandler {
 		}
 
 		this.hazelcast = getApi().getHazelcastInstance(initParams.getString(F.HAZELCAST),
-				new IdHazelcastInitializer(getDatabase(), 30, 1000));
+				new IdHazelcastInitializer(getDatabase(), 1, 1000));
+		this.hazelcast.getMap(IDUser.ID_USER_MAP_KEY).addIndex(F.DISPLAY_NAME, true);
 		this.accessTokenManager = new AccessTokenManager(hazelcast);
 		this.accessTokenManager.start(getApi().getScheduler());
 	}

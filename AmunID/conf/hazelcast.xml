@@ -7,7 +7,7 @@
 <!-- The default Hazelcast configuration. This is used when: - no hazelcast.xml if present -->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd" xmlns="http://www.hazelcast.com/schema/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<group>
-		<name>amun_id</name>
+		<name>dev</name>
 		<password>dev-pass</password>
 	</group>
 	<management-center enabled="false">http://203.113.159.180/mancenter</management-center>
@@ -102,13 +102,6 @@
 			be overwritten if merging entry exists for the key. com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster. com.hazelcast.map.merge.HigherHitsMapMergePolicy 
 			; entry with the higher hits wins. com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins. -->
 		<merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
-
-		<map-store enabled="true">
-			<class-name>com.amun.id.user.UserMapStore</class-name>
-			<write-delay-seconds>30</write-delay-seconds>
-			<write-batch-size>1000</write-batch-size>
-			<write-coalescing>true</write-coalescing>
-		</map-store>
 	</map>
 
 	<multimap name="default">
@@ -147,6 +140,8 @@
 
 	<serialization>
 		<data-serializable-factories>
+			<data-serializable-factory factory-id="1">com.simms.plugin.channel.room.RoomDataSerializableFactory</data-serializable-factory>
+			<data-serializable-factory factory-id="2">com.simms.plugin.channel.user.UserDataSerializableFactory</data-serializable-factory>
 			<data-serializable-factory factory-id="100">com.amun.id.accesstoken.AccessTokenDataFactory</data-serializable-factory>
 			<data-serializable-factory factory-id="101">com.amun.id.user.UserDataSerializableFactory</data-serializable-factory>
 		</data-serializable-factories>

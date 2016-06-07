@@ -17,6 +17,7 @@ import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.amun.id.statics.Status;
+import com.amun.id.user.IDUser;
 import com.amun.id.utils.StringUtils;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -61,14 +62,19 @@ public class RegisterProcessor extends AbstractProcessor {
 				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.PASSWORD_INVALID.getCode()));
 			}
 
+			if (username.length() < 6 || username.length() > 15 || displayName.length() < 3
+					|| displayName.length() > 15) {
+				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.NAME_INVALID.getCode()));
+			}
+
 			if (!StringUtils.isValidIPAdress(ipAddress) && !allowIPs.contains(ipAddress)) {
 				status = Status.INVALID_IP_ADDRESS.getCode();
 				message = "ip address `" + ipAddress + "` is invalid";
 			} else {
-				Document user = new Document();
-				user.put(F.USERNAME, username);
+				Document doc = new Document();
+				doc.put(F.USERNAME, username);
 				try {
-					long count = getContext().getDatabase().getCollection(F.USER).count(user);
+					long count = getContext().getDatabase().getCollection(F.USER).count(doc);
 					if (count > 0) {
 						status = Status.USERNAME_EXISTS.getCode();
 						message = "user `" + username + "` was already exists";
@@ -78,10 +84,10 @@ public class RegisterProcessor extends AbstractProcessor {
 					throw new ExecuteProcessorException(e);
 				}
 
-				user = new Document();
-				user.put(F.DISPLAY_NAME, displayName);
+				doc = new Document();
+				doc.put(F.DISPLAY_NAME, displayName);
 				try {
-					long count = getContext().getDatabase().getCollection(F.USER).count(user);
+					long count = getContext().getDatabase().getCollection(F.USER).count(doc);
 					if (count > 0) {
 						status = Status.DISPLAY_NAME_EXISTS.getCode();
 						message = "displayName `" + displayName + "` was already exists";
@@ -93,26 +99,25 @@ public class RegisterProcessor extends AbstractProcessor {
 
 				String salt = StringUtils.randomString(8);
 				String userId = UUID.randomUUID().toString();
-
-				Document document = new Document();
-				document.put(F.USER_ID, userId);
-				document.put(F.USERNAME, username);
-				document.put(F.DISPLAY_NAME, displayName);
-				document.put(F.SALT, salt);
-				document.put(F.PASSWORD, SHAEncryptor.sha512Hex(password + salt));
-				document.put(F.CREATED_TIME, System.currentTimeMillis());
-				document.put(F.IP_ADDRESS, request.getString(F.IP_ADDRESS));
 				String refreshToken = UUID.randomUUID().toString() + "." + UUID.randomUUID().toString();
 				refreshToken = refreshToken.replace("-", "");
-				document.put(F.REFRESH_TOKEN, refreshToken);
-				document.put(F.PHONE_VERIFIED, false);
-
 				Calendar calendar = GregorianCalendar.getInstance();
 				calendar.add(Calendar.DATE, 90);
 				long refreshTokenExpireIn = calendar.getTimeInMillis();
-				document.put(F.REFRESH_TOKEN_EXPIRE_IN, refreshTokenExpireIn);
+
+				IDUser user = new IDUser();
+				user.setUserId(userId);
+				user.setUsername(username);
+				user.setDisplayName(displayName);
+				user.setSalt(salt);
+				user.setPassword(SHAEncryptor.sha512Hex(password + salt));
+				user.setRefreshToken(refreshToken);
+				user.setIpAddress(ipAddress);
+				user.setRefreshTokenExpireIn(refreshTokenExpireIn);
 
 				try {
+					Document document = new Document();
+					user.writeDocument(document);
 					getContext().getDatabase().getCollection(F.USER).insertOne(document);
 				} catch (Exception e) {
 					throw new ExecuteProcessorException(e);
