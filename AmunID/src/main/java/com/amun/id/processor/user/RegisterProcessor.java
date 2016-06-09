@@ -19,6 +19,7 @@ import com.amun.id.statics.F;
 import com.amun.id.statics.Status;
 import com.amun.id.user.IDUser;
 import com.amun.id.utils.StringUtils;
+import com.hazelcast.core.IMap;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.nhb.common.data.MapTuple;
@@ -36,16 +37,15 @@ public class RegisterProcessor extends AbstractProcessor {
 		int status = 1;
 		String message = "paramter's missing";
 		boolean alsoLogin = request.getBoolean(F.ALSO_LOGIN, false);
+		IMap<String, IDUser> mapstore = getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY);
 
 		if (request.variableExists(F.USERNAME) && request.variableExists(F.PASSWORD)
 				&& request.variableExists(F.IP_ADDRESS)) {
 			String username = request.getString(F.USERNAME);
 			String password = request.getString(F.PASSWORD);
 			String ipAddress = request.getString(F.IP_ADDRESS);
-			String displayName = request.getString(F.DISPLAY_NAME, username);
 
-			if (username.length() < 6 || username.length() > 15 || displayName.length() < 3
-					|| displayName.length() > 15) {
+			if (username.length() < 6 || username.length() > 15) {
 				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.NAME_INVALID.getCode()));
 			}
 
@@ -58,7 +58,7 @@ public class RegisterProcessor extends AbstractProcessor {
 			}
 
 			for (String word : words) {
-				if (username.contains(word) || displayName.contains(word)) {
+				if (username.contains(word)) {
 					return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.BAD_WORD_FILTER));
 				}
 			}
@@ -71,30 +71,10 @@ public class RegisterProcessor extends AbstractProcessor {
 				status = Status.INVALID_IP_ADDRESS.getCode();
 				message = "ip address `" + ipAddress + "` is invalid";
 			} else {
-				Document doc = new Document();
-				doc.put(F.USERNAME, username);
-				try {
-					long count = getContext().getDatabase().getCollection(F.USER).count(doc);
-					if (count > 0) {
-						status = Status.USERNAME_EXISTS.getCode();
-						message = "user `" + username + "` was already exists";
-						return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
-					}
-				} catch (Exception e) {
-					throw new ExecuteProcessorException(e);
-				}
-
-				doc = new Document();
-				doc.put(F.DISPLAY_NAME, displayName);
-				try {
-					long count = getContext().getDatabase().getCollection(F.USER).count(doc);
-					if (count > 0) {
-						status = Status.DISPLAY_NAME_EXISTS.getCode();
-						message = "displayName `" + displayName + "` was already exists";
-						return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
-					}
-				} catch (Exception e) {
-					throw new ExecuteProcessorException(e);
+				if (mapstore.get(username) != null) {
+					status = Status.USERNAME_EXISTS.getCode();
+					message = "user `" + username + "` was already exists";
+					return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
 				}
 
 				String salt = StringUtils.randomString(8);
@@ -108,20 +88,13 @@ public class RegisterProcessor extends AbstractProcessor {
 				IDUser user = new IDUser();
 				user.setUserId(userId);
 				user.setUsername(username);
-				user.setDisplayName(displayName);
 				user.setSalt(salt);
 				user.setPassword(SHAEncryptor.sha512Hex(password + salt));
 				user.setRefreshToken(refreshToken);
 				user.setIpAddress(ipAddress);
 				user.setRefreshTokenExpireIn(refreshTokenExpireIn);
 
-				try {
-					Document document = new Document();
-					user.writeDocument(document);
-					getContext().getDatabase().getCollection(F.USER).insertOne(document);
-				} catch (Exception e) {
-					throw new ExecuteProcessorException(e);
-				}
+				mapstore.put(user.getUsername(), user);
 
 				if (alsoLogin) {
 					PuObject info = new PuObject();

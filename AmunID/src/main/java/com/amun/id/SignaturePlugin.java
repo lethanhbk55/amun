@@ -6,7 +6,6 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.util.Base64;
 
 import com.amun.id.statics.F;
 import com.mario.entity.impl.BaseMessageHandler;
@@ -15,6 +14,7 @@ import com.nhb.common.data.PuObject;
 import com.nhb.common.data.PuObjectRO;
 import com.nhb.common.encrypt.rsa.KeyPairHelper;
 import com.nhb.common.encrypt.rsa.SignatureHelper;
+import com.nhb.common.utils.Converter;
 import com.nhb.common.utils.FileSystemUtils;
 
 public class SignaturePlugin extends BaseMessageHandler {
@@ -50,7 +50,7 @@ public class SignaturePlugin extends BaseMessageHandler {
 					String data = request.getString(F.DATA);
 					try {
 						byte[] sign = signatureHelper.sign(data);
-						String signature = Base64.getEncoder().encodeToString(sign);
+						String signature = Converter.bytesToHex(sign);
 						result.setInteger(F.STATUS, 0);
 						result.setString(F.SIGNATURE, signature);
 					} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
@@ -63,7 +63,7 @@ public class SignaturePlugin extends BaseMessageHandler {
 					String info = request.getString(F.INFO);
 					String signature = request.getString(F.SIGNATURE);
 					try {
-						boolean verify = signatureHelper.verify(info.getBytes(), signature);
+						boolean verify = signatureHelper.verify(info.getBytes(), Converter.hexToBytes(signature));
 						result.setInteger(F.STATUS, 0);
 						result.setBoolean(F.IS_VALID, verify);
 					} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
