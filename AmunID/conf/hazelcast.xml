@@ -7,7 +7,7 @@
 <!-- The default Hazelcast configuration. This is used when: - no hazelcast.xml if present -->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd" xmlns="http://www.hazelcast.com/schema/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<group>
-		<name>dev</name>
+		<name>amun_id</name>
 		<password>dev-pass</password>
 	</group>
 	<management-center enabled="false">http://203.113.159.180/mancenter</management-center>

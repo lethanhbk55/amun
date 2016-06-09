@@ -39,11 +39,19 @@ public class StringUtils {
 	}
 
 	public static boolean containsLetterAndDigit(String text) {
+		boolean hasDigit = false;
+		boolean hasLetter = false;
 		for (char c : text.toCharArray()) {
-			if (!Character.isLetterOrDigit(c)) {
-				return false;
+			if (Character.isDigit(c)) {
+				if (!hasDigit) {
+					hasDigit = true;
+				}
+			} else if (Character.isLetter(c)) {
+				if (!hasLetter) {
+					hasLetter = true;
+				}
 			}
 		}
-		return true;
+		return hasDigit && hasLetter;
 	}
 }

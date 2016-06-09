@@ -18,6 +18,7 @@ import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.amun.id.statics.Status;
 import com.amun.id.user.IDUser;
+import com.amun.id.utils.Counters;
 import com.amun.id.utils.StringUtils;
 import com.hazelcast.core.IMap;
 import com.mongodb.client.FindIterable;
@@ -38,6 +39,7 @@ public class RegisterProcessor extends AbstractProcessor {
 		String message = "paramter's missing";
 		boolean alsoLogin = request.getBoolean(F.ALSO_LOGIN, false);
 		IMap<String, IDUser> mapstore = getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY);
+		Counters counters = getContext().getModelFactory().newModel(Counters.class);
 
 		if (request.variableExists(F.USERNAME) && request.variableExists(F.PASSWORD)
 				&& request.variableExists(F.IP_ADDRESS)) {
@@ -63,7 +65,7 @@ public class RegisterProcessor extends AbstractProcessor {
 				}
 			}
 
-			if (!StringUtils.containsLetterAndDigit(password) || password.length() < 5 || password.length() > 15) {
+			if (!StringUtils.containsLetterAndDigit(password) || password.length() < 6 || password.length() > 15) {
 				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.PASSWORD_INVALID.getCode()));
 			}
 
@@ -71,12 +73,6 @@ public class RegisterProcessor extends AbstractProcessor {
 				status = Status.INVALID_IP_ADDRESS.getCode();
 				message = "ip address `" + ipAddress + "` is invalid";
 			} else {
-				if (mapstore.get(username) != null) {
-					status = Status.USERNAME_EXISTS.getCode();
-					message = "user `" + username + "` was already exists";
-					return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
-				}
-
 				String salt = StringUtils.randomString(8);
 				String userId = UUID.randomUUID().toString();
 				String refreshToken = UUID.randomUUID().toString() + "." + UUID.randomUUID().toString();
@@ -93,8 +89,16 @@ public class RegisterProcessor extends AbstractProcessor {
 				user.setRefreshToken(refreshToken);
 				user.setIpAddress(ipAddress);
 				user.setRefreshTokenExpireIn(refreshTokenExpireIn);
+				user.setRegTime(System.currentTimeMillis());
 
-				mapstore.put(user.getUsername(), user);
+				IDUser oldUser = mapstore.putIfAbsent(user.getUsername(), user);
+				if (oldUser != null) {
+					status = Status.USERNAME_EXISTS.getCode();
+					message = "user `" + username + "` was already exists";
+					return PuObject.fromObject(new MapTuple<>(F.STATUS, status, F.DATA, message));
+				}
+				user.generateCustomerId(counters.getNextCustomerId());
+				mapstore.replace(user.getUsername(), user);
 
 				if (alsoLogin) {
 					PuObject info = new PuObject();

@@ -45,4 +45,10 @@ public class F {
 	public static final String WORD = "word";
 	public static final String AVATAR = "avatar";
 	public static final String GENDER = "gender";
+	public static final String DEVICE_ID = "deviceId";
+	public static final String COUNTERS = "counters";
+	public static final String SEQ = "seq";
+	public static final String CUSTOMER_ID = "customerId";
+	public static final String AMUN_ID = "amun_id";
+	public static final String PLATFORM_ID = "platformId";
 }

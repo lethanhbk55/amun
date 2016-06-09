@@ -15,12 +15,12 @@ import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.ProcessorManager;
 import com.amun.id.statics.F;
-import com.amun.id.user.IDUser;
 import com.amun.id.user.IdHazelcastInitializer;
 import com.hazelcast.core.HazelcastInstance;
 import com.mario.entity.impl.BaseMessageHandler;
 import com.mario.entity.message.Message;
 import com.mario.entity.message.impl.HttpMessage;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
@@ -29,17 +29,19 @@ import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObject;
 import com.nhb.common.data.PuObjectRO;
 import com.nhb.common.data.PuValue;
+import com.nhb.common.db.models.ModelFactory;
 
 public class UserHandler extends BaseMessageHandler {
 	private ProcessorManager manager;
 	private MongoDatabase database;
 	private HazelcastInstance hazelcast;
 	private AccessTokenManager accessTokenManager;
+	private ModelFactory modelFactory;
 
 	@Override
 	public void init(PuObjectRO initParams) {
 		if (initParams.variableExists(F.MONGODB)) {
-			initMongoDatabase(getApi().getMongoClient(initParams.getString(F.MONGODB)).getDatabase("amun_id"));
+			initMongoDatabase(getApi().getMongoClient(initParams.getString(F.MONGODB)).getDatabase(F.AMUN_ID));
 		}
 
 		manager = new ProcessorManager();
@@ -51,9 +53,12 @@ public class UserHandler extends BaseMessageHandler {
 
 		this.hazelcast = getApi().getHazelcastInstance(initParams.getString(F.HAZELCAST),
 				new IdHazelcastInitializer(getDatabase(), 1, 1000));
-		this.hazelcast.getMap(IDUser.ID_USER_MAP_KEY).addIndex(F.DISPLAY_NAME, true);
 		this.accessTokenManager = new AccessTokenManager(hazelcast);
 		this.accessTokenManager.start(getApi().getScheduler());
+
+		modelFactory = new ModelFactory();
+		modelFactory.setClassLoader(this.getClass().getClassLoader());
+		modelFactory.setMongoClient(getApi().getMongoClient(initParams.getString(F.MONGODB)));
 	}
 
 	private void createDatabaseIndexes(MongoCollection<Document> collection, List<Document> tobeIndexed) {
@@ -93,9 +98,12 @@ public class UserHandler extends BaseMessageHandler {
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
 				new ArrayList<>(Arrays.asList(new Document().append(F.REFRESH_TOKEN, 1))));
-
+		
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.DISPLAY_NAME, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.CUSTOMER_ID, 1))));
+		
+		createDatabaseIndexes(this.database.getCollection(F.USER),
+				new ArrayList<>(Arrays.asList(new Document().append(F.DEVICE_ID, 1))));
 
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))));
@@ -103,6 +111,13 @@ public class UserHandler extends BaseMessageHandler {
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
 				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))));
 
+		MongoCollection<Document> counters = database.getCollection(F.COUNTERS);
+		if (counters.count(new BasicDBObject(F._ID, F.DEVICE_ID)) == 0) {
+			counters.insertOne(new Document(F._ID, F.DEVICE_ID).append(F.SEQ, 1));
+		}
+		if (counters.count(new BasicDBObject(F._ID, F.CUSTOMER_ID)) == 0) {
+			counters.insertOne(new Document(F._ID, F.CUSTOMER_ID).append(F.SEQ, 1));
+		}
 	}
 
 	@Override
@@ -122,8 +137,10 @@ public class UserHandler extends BaseMessageHandler {
 				String ipAddress = null;
 				if (servletRequest != null) {
 					ipAddress = servletRequest.getHeader("X-Forwarded-For");
+					getLogger().debug("ip: {}", ipAddress);
 					if (ipAddress == null) {
 						ipAddress = httpMessage.getContext().getRequest().getRemoteAddr();
+						getLogger().debug("reip: {}", ipAddress);
 					}
 				}
 
@@ -171,5 +188,9 @@ public class UserHandler extends BaseMessageHandler {
 			throw new SignDataException("result not contains status filed or status != 0\n" + result);
 		}
 		throw new SignDataException("call signature plugin return null or not instance PuObject\n" + resp);
+	}
+
+	public ModelFactory getModelFactory() {
+		return this.modelFactory;
 	}
 }
