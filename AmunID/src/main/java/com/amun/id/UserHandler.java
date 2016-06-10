@@ -61,7 +61,8 @@ public class UserHandler extends BaseMessageHandler {
 		modelFactory.setMongoClient(getApi().getMongoClient(initParams.getString(F.MONGODB)));
 	}
 
-	private void createDatabaseIndexes(MongoCollection<Document> collection, List<Document> tobeIndexed) {
+	private void createDatabaseIndexes(MongoCollection<Document> collection, List<Document> tobeIndexed,
+			boolean unique) {
 		for (Document index : collection.listIndexes()) {
 			index = (Document) index.get(F.KEY);
 			List<Integer> markToRemove = new ArrayList<>();
@@ -82,7 +83,7 @@ public class UserHandler extends BaseMessageHandler {
 		for (Document index : tobeIndexed) {
 			getLogger().debug("create index: " + index);
 			IndexOptions options = new IndexOptions();
-			options.unique(true);
+			options.unique(unique);
 			collection.createIndex(index, options);
 		}
 	}
@@ -91,25 +92,28 @@ public class UserHandler extends BaseMessageHandler {
 		this.database = database;
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.USER_ID, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.USER_ID, 1))), true);
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.USERNAME, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.USERNAME, 1))), true);
 
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.REFRESH_TOKEN, 1))));
-		
+				new ArrayList<>(Arrays.asList(new Document().append(F.REFRESH_TOKEN, 1))), true);
+
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.CUSTOMER_ID, 1))));
-		
+				new ArrayList<>(Arrays.asList(new Document().append(F.CUSTOMER_ID, 1))), true);
+
 		createDatabaseIndexes(this.database.getCollection(F.USER),
-				new ArrayList<>(Arrays.asList(new Document().append(F.DEVICE_ID, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.DEVICE_ID, 1))), false);
+
+		createDatabaseIndexes(this.database.getCollection(F.USER),
+				new ArrayList<>(Arrays.asList(new Document().append(F.REGISTER_TYPE, 1))), false);
 
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
-				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.PARTNER_NAME, 1))), true);
 
 		createDatabaseIndexes(this.database.getCollection(F.AUTHENTICATOR),
-				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))));
+				new ArrayList<>(Arrays.asList(new Document().append(F.AUTHENTICATOR_ID, 1))), true);
 
 		MongoCollection<Document> counters = database.getCollection(F.COUNTERS);
 		if (counters.count(new BasicDBObject(F._ID, F.DEVICE_ID)) == 0) {

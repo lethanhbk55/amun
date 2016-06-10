@@ -51,4 +51,6 @@ public class F {
 	public static final String CUSTOMER_ID = "customerId";
 	public static final String AMUN_ID = "amun_id";
 	public static final String PLATFORM_ID = "platformId";
+	public static final String REGISTER_TYPE = "registerType";
+	public static final String OS = "os";
 }

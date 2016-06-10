@@ -27,6 +27,7 @@ public class GetUserInfo extends AbstractProcessor {
 			data.setInteger(F.CUSTOMER_ID, user.getCustomerId());
 			data.setString(F.AVATAR, user.getAvatar() != null ? user.getAvatar() : "");
 			data.setInteger(F.GENDER, user.getGender());
+			data.setInteger(F.PLATFORM_ID, user.getPlatformId());
 			PuObject result = new PuObject();
 			result.setInteger(F.STATUS, Status.SUCCESS.getCode());
 			result.setPuObject(F.DATA, data);

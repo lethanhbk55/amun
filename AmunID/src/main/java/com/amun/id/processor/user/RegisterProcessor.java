@@ -16,6 +16,7 @@ import com.amun.id.exception.ExecuteProcessorException;
 import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
+import com.amun.id.statics.RegisterType;
 import com.amun.id.statics.Status;
 import com.amun.id.user.IDUser;
 import com.amun.id.utils.Counters;
@@ -40,12 +41,16 @@ public class RegisterProcessor extends AbstractProcessor {
 		boolean alsoLogin = request.getBoolean(F.ALSO_LOGIN, false);
 		IMap<String, IDUser> mapstore = getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY);
 		Counters counters = getContext().getModelFactory().newModel(Counters.class);
+		MongoCollection<Document> collection = getContext().getDatabase().getCollection(F.USER);
 
 		if (request.variableExists(F.USERNAME) && request.variableExists(F.PASSWORD)
-				&& request.variableExists(F.IP_ADDRESS)) {
+				&& request.variableExists(F.IP_ADDRESS) && request.variableExists(F.DEVICE_ID)
+				&& request.variableExists(F.PLATFORM_ID)) {
 			String username = request.getString(F.USERNAME);
 			String password = request.getString(F.PASSWORD);
 			String ipAddress = request.getString(F.IP_ADDRESS);
+			String deviceId = request.getString(F.DEVICE_ID);
+			int platformId = request.getInteger(F.PLATFORM_ID);
 
 			if (username.length() < 6 || username.length() > 15) {
 				return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.NAME_INVALID.getCode()));
@@ -73,6 +78,7 @@ public class RegisterProcessor extends AbstractProcessor {
 				status = Status.INVALID_IP_ADDRESS.getCode();
 				message = "ip address `" + ipAddress + "` is invalid";
 			} else {
+				int imeiCount = (int) collection.count(new Document(F.DEVICE_ID, deviceId));
 				String salt = StringUtils.randomString(8);
 				String userId = UUID.randomUUID().toString();
 				String refreshToken = UUID.randomUUID().toString() + "." + UUID.randomUUID().toString();
@@ -90,6 +96,11 @@ public class RegisterProcessor extends AbstractProcessor {
 				user.setIpAddress(ipAddress);
 				user.setRefreshTokenExpireIn(refreshTokenExpireIn);
 				user.setRegTime(System.currentTimeMillis());
+				user.setDeviceId(deviceId);
+				user.setPlatformId(platformId);
+				user.setImeiCount(imeiCount);
+				user.setRegisterType(RegisterType.NORMAL.getId());
+				user.setOs(request.getString(F.OS, ""));
 
 				IDUser oldUser = mapstore.putIfAbsent(user.getUsername(), user);
 				if (oldUser != null) {

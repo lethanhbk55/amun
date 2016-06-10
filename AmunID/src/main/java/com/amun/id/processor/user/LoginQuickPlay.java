@@ -10,6 +10,7 @@ import com.amun.id.exception.SignDataException;
 import com.amun.id.processor.AbstractProcessor;
 import com.amun.id.statics.F;
 import com.amun.id.statics.Platform;
+import com.amun.id.statics.RegisterType;
 import com.amun.id.statics.Status;
 import com.amun.id.user.IDUser;
 import com.amun.id.utils.Counters;
@@ -32,7 +33,8 @@ public class LoginQuickPlay extends AbstractProcessor {
 		String deviceId = request.getString(F.DEVICE_ID);
 		int platformId = request.getInteger(F.PLATFORM_ID);
 		MongoCollection<Document> collection = getContext().getDatabase().getCollection(F.USER);
-		FindIterable<Document> found = collection.find(new Document(F.DEVICE_ID, deviceId));
+		FindIterable<Document> found = collection
+				.find(new Document(F.DEVICE_ID, deviceId).append(F.REGISTER_TYPE, RegisterType.QUICK_PLAY.getId()));
 		Counters counters = this.getContext().getModelFactory().newModel(Counters.class);
 
 		String prefix = "ID";
@@ -44,6 +46,8 @@ public class LoginQuickPlay extends AbstractProcessor {
 		IDUser user = new IDUser();
 
 		if (found.first() == null) {
+			int imeiCount = (int) collection.count(new Document(F.DEVICE_ID, deviceId));
+
 			user.autoUuid();
 			user.setUsername(prefix + "_" + counters.generateId(counters.getNextDeviceId()));
 			user.setIpAddress(request.getString(F.IP_ADDRESS));
@@ -52,6 +56,11 @@ public class LoginQuickPlay extends AbstractProcessor {
 			user.setRefreshTokenExpireIn(System.currentTimeMillis() + AccessTokenManager.ACCESS_TOKEN_LIVE_TIME);
 			user.generateCustomerId(counters.getNextCustomerId());
 			user.setDeviceId(deviceId);
+			user.setPlatformId(platformId);
+			user.setImeiCount(imeiCount);
+			user.setRegisterType(RegisterType.QUICK_PLAY.getId());
+			user.setOs(request.getString(F.OS, ""));
+
 			IDUser oldUser = (IDUser) this.getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY)
 					.putIfAbsent(user.getUsername(), user);
 			if (oldUser != null) {
