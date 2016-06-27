@@ -53,4 +53,11 @@ public class F {
 	public static final String PLATFORM_ID = "platformId";
 	public static final String REGISTER_TYPE = "registerType";
 	public static final String OS = "os";
+	public static final String GAME_CODE = "gameCode";
+	public static final String WORDS = "words";
+	public static final String LIMIT = "limit";
+	public static final String SKIP = "skip";
+	public static final String COUNT = "count";
+	public static final String USERS = "users";
+	public static final String ITEMS = "items";
 }

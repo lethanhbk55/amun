@@ -60,6 +60,8 @@ public class LoginQuickPlay extends AbstractProcessor {
 			user.setImeiCount(imeiCount);
 			user.setRegisterType(RegisterType.QUICK_PLAY.getId());
 			user.setOs(request.getString(F.OS, ""));
+			user.setRegTime(System.currentTimeMillis());
+			user.setGameCode(request.getString(F.GAME_CODE, ""));
 
 			IDUser oldUser = (IDUser) this.getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY)
 					.putIfAbsent(user.getUsername(), user);

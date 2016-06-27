@@ -12,7 +12,7 @@ import com.nhb.common.data.PuElement;
 import com.nhb.common.data.PuObject;
 import com.nhb.common.data.PuObjectRO;
 
-@CommandProcessor(command = { "getAmunUserInfo" })
+@CommandProcessor(command = { "getAmunUserInfo", "getUserInfo" })
 public class GetUserInfo extends AbstractProcessor {
 
 	@Override
@@ -21,16 +21,9 @@ public class GetUserInfo extends AbstractProcessor {
 		IMap<String, IDUser> mapstore = getContext().getHazelcast().getMap(IDUser.ID_USER_MAP_KEY);
 		IDUser user = mapstore.get(username);
 		if (user != null) {
-			PuObject data = new PuObject();
-			data.setString(F.USERNAME, user.getUsername());
-			data.setString(F.USER_ID, user.getUserId());
-			data.setInteger(F.CUSTOMER_ID, user.getCustomerId());
-			data.setString(F.AVATAR, user.getAvatar() != null ? user.getAvatar() : "");
-			data.setInteger(F.GENDER, user.getGender());
-			data.setInteger(F.PLATFORM_ID, user.getPlatformId());
 			PuObject result = new PuObject();
 			result.setInteger(F.STATUS, Status.SUCCESS.getCode());
-			result.setPuObject(F.DATA, data);
+			result.setPuObject(F.DATA, user.toPuObject());
 			return result;
 		}
 		return PuObject.fromObject(new MapTuple<>(F.STATUS, Status.UNKNOWN.getCode()));

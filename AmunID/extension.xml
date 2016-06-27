@@ -34,7 +34,11 @@
 	</servers>
 
 	<producers>
-
+		<kafka>
+			<name>uams_producer</name>
+			<config>conf/producer.properties</config>
+			<topic>gaia.uams</topic>
+		</kafka>
 	</producers>
 
 	<gateways>
@@ -94,6 +98,7 @@
 			<variables>
 				<variable name="mongodb" type="string">id_mongodb</variable>
 				<variable name="hazelcast" type="string">id_hazelcast</variable>
+				<variable name="uamsProducer" type="string">uams_producer</variable>
 			</variables>
 		</handler>
 

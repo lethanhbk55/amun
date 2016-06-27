@@ -12,7 +12,7 @@
 	</group>
 	<management-center enabled="false">http://203.113.159.180/mancenter</management-center>
 	<network>
-		<port auto-increment="true" port-count="100">5701</port>
+		<port auto-increment="true" port-count="100">5711</port>
 		<outbound-ports>
 			<!-- Allowed port range when connecting to other nodes. 0 or * means use system provided port. -->
 			<ports>0</ports>
@@ -24,6 +24,8 @@
 			</multicast>
 			<tcp-ip enabled="true">
 				<interface>127.0.0.1</interface>
+				<interface>192.168.0.1</interface>
+				<interface>192.168.0.2</interface>
 			</tcp-ip>
 			<aws enabled="false">
 				<access-key>my-access-key</access-key>
@@ -140,8 +142,6 @@
 
 	<serialization>
 		<data-serializable-factories>
-			<data-serializable-factory factory-id="1">com.simms.plugin.channel.room.RoomDataSerializableFactory</data-serializable-factory>
-			<data-serializable-factory factory-id="2">com.simms.plugin.channel.user.UserDataSerializableFactory</data-serializable-factory>
 			<data-serializable-factory factory-id="100">com.amun.id.accesstoken.AccessTokenDataFactory</data-serializable-factory>
 			<data-serializable-factory factory-id="101">com.amun.id.user.UserDataSerializableFactory</data-serializable-factory>
 		</data-serializable-factories>

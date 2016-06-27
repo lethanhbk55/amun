@@ -141,9 +141,10 @@ public class UserHandler extends BaseMessageHandler {
 				String ipAddress = null;
 				if (servletRequest != null) {
 					ipAddress = servletRequest.getHeader("X-Forwarded-For");
+					
 					getLogger().debug("ip: {}", ipAddress);
 					if (ipAddress == null) {
-						ipAddress = httpMessage.getContext().getRequest().getRemoteAddr();
+						ipAddress = servletRequest.getRemoteAddr();
 						getLogger().debug("reip: {}", ipAddress);
 					}
 				}
